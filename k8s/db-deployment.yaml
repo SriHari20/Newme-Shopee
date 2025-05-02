@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ekart-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ekart-db
+  template:
+    metadata:
+      labels:
+        app: ekart-db
+    spec:
+      containers:
+      - name: ekart-db
+        image: postgres:17.0-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: ekartdb
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: ekart-secrets
+              key: dbUsername
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ekart-secrets
+              key: dbPassword
+        volumeMounts:
+        - name: db-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: db-data
+        persistentVolumeClaim:
+          claimName: ekart-db-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ekart-db-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ekart-db
+spec:
+  selector:
+    app: ekart-db
+  ports:
+  - protocol: TCP
+    port: 5432
+    targetPort: 5432
+  type: ClusterIP

@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ekart-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ekart-backend
+  template:
+    metadata:
+      labels:
+        app: ekart-backend
+    spec:
+      containers:
+      - name: ekart-backend
+        image: yourdockerhubusername/ekart-backend:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: dbUrl
+          value: jdbc:postgresql://ekart-db:5432/ekartdb
+        - name: dbUsername
+          valueFrom:
+            secretKeyRef:
+              name: ekart-secrets
+              key: dbUsername
+        - name: dbPassword
+          valueFrom:
+            secretKeyRef:
+              name: ekart-secrets
+              key: dbPassword
+        - name: jsonSecretKey
+          valueFrom:
+            secretKeyRef:
+              name: ekart-secrets
+              key: jsonSecretKey
+        - name: adminPassword
+          valueFrom:
+            secretKeyRef:
+              name: ekart-secrets
+              key: adminPassword
+        - name: frontendDomainUrl
+          value: http://yourfrontenddomain.com
+        - name: stripeApiKey
+          valueFrom:
+            secretKeyRef:
+              name: ekart-secrets
+              key: stripeApiKey
+        - name: REDIS_HOST
+          value: ekart-redis
+        - name: endpointSecret
+          valueFrom:
+            secretKeyRef:
+              name: ekart-secrets
+              key: endpointSecret
+        - name: emailUsername
+          valueFrom:
+            secretKeyRef:
+              name: ekart-secrets
+              key: emailUsername
+        - name: emailPassword
+          valueFrom:
+            secretKeyRef:
+              name: ekart-secrets
+              key: emailPassword
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ekart-backend
+spec:
+  selector:
+    app: ekart-backend
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: NodePort
